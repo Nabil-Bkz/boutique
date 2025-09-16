@@ -1,4 +1,5 @@
 import { useProducts } from "./api/products";
+import Spinner from "./Spinner";
 
 export default function App() {
   const { products } = useProducts();
@@ -11,13 +12,18 @@ export default function App() {
           <p>Boutique premium de textile pour bébé 😎</p>
           <a
             href="#main"
-            className="inline-block bg-gray-800 text-white px-6 py-3 rounded-md shadow-md hover:bg-gray-700 transition"
+            className="inline-block bg-gray-800 text-white px-6 py-3 rounded-md shadow-md hover:bg-gray-700 transition text-center h-12 w-60"
           >
-            Voir les produits
+            <div className="flex items-center justify-center h-full">
+
+            {
+              products.length > 0 ? "Voir les produits" : <Spinner className="text-white" />
+            }
+            </div>
           </a>
         </div>
         <img
-          src="/public/hero2.jpg"
+          src="/hero2.jpg"
           alt="Boutique Couture"
           className="w-full h-screen block object-cover shadow-md"
         />
@@ -59,7 +65,7 @@ export default function App() {
         </div>
         <div className="text-gray-600 mt-12 space-y-4 px-4 bg-white py-8">
           <div className="flex gap-6">
-            <img src="/public/hero.jpg" alt="Nos valeurs" className="w-1/2 mx-auto rounded-md shadow-md" />
+            <img src="/hero.jpg" alt="Nos valeurs" className="w-1/2 mx-auto rounded-md shadow-md" />
             <div className="w-1/2 flex flex-col justify-center leading-8">
               <h2 className="text-xl font-bold mb-4">Les valeurs de notre marque premium</h2>
               <p>Chaque produit est conçu avec soin et attention aux détails.</p>
