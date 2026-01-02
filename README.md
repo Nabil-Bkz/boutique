@@ -47,6 +47,40 @@ boutique-couture/
 - **uv** (Python package manager)
 - **tmux**
 
+## Getting Started
+
+### 1. Install dependencies
+
+```bash
+# Frontend
+cd frontend && npm install
+
+# Backend
+cd backend && uv sync
+```
+
+### 2. Initialize the database
+
+```bash
+cd backend/core
+uv run python manage.py migrate
+uv run python manage.py createsuperuser
+```
+
+### 3. Start development servers
+
+```bash
+./start-dev.sh
+```
+
+This runs frontend on http://localhost:8080 and backend on http://localhost:8000.
+
+### 4. Add products via Django Admin
+
+1. Go to http://localhost:8000/admin/
+2. Login with your superuser credentials
+3. Add products with name, description, price, and image URL
+
 ## Documentation
 
 - [Backend Deployment Guide](./backend/README.md) - Detailed instructions for deploying the backend and frontend to a VM
