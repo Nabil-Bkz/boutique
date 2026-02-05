@@ -1,1 +1,1 @@
-export const ADMIN_BASE_URL = "http://localhost:8000/admin/";
+export { ADMIN_BASE_URL } from './config';

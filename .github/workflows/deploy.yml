@@ -1,0 +1,107 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      server_host:
+        description: 'Server IP address'
+        required: true
+        default: '35.180.255.192'
+      server_user:
+        description: 'SSH user'
+        required: true
+        default: 'admin'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SERVER_HOST || github.event.inputs.server_host }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST || github.event.inputs.server_host }}
+          SERVER_USER: ${{ secrets.SERVER_USER || github.event.inputs.server_user }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || '/home/admin/boutique' }}
+        run: |
+          echo "🚀 Starting deployment to $SERVER_USER@$SERVER_HOST"
+          
+          # Create deployment directory if it doesn't exist
+          ssh $SERVER_USER@$SERVER_HOST "mkdir -p $DEPLOY_PATH"
+          
+          # Copy files to server
+          echo "📦 Copying files to server..."
+          rsync -avz --delete \
+            --exclude '.git' \
+            --exclude 'node_modules' \
+            --exclude '__pycache__' \
+            --exclude '*.pyc' \
+            --exclude '.pytest_cache' \
+            --exclude 'db.sqlite3' \
+            ./ $SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/
+          
+          # Deploy on server
+          echo "🐳 Deploying with Docker Compose..."
+          ssh $SERVER_USER@$SERVER_HOST << EOF
+            set -e
+            cd $DEPLOY_PATH
+            
+            # Ensure Docker and Docker Compose are installed
+            if ! command -v docker &> /dev/null; then
+              echo "❌ Docker is not installed on the server"
+              exit 1
+            fi
+            
+            # Set API URL for frontend build (must be set before docker compose)
+            export VITE_API_URL=http://$SERVER_HOST:8000
+            
+            # Pull latest images and restart services with build args
+            docker compose pull || docker-compose pull || true
+            VITE_API_URL=http://$SERVER_HOST:8000 docker compose up -d --build || VITE_API_URL=http://$SERVER_HOST:8000 docker-compose up -d --build
+            
+            # Show running containers
+            echo "✅ Deployment complete! Running containers:"
+            docker ps
+            
+            # Show logs
+            echo "📋 Recent logs:"
+            docker compose logs --tail=50 || docker-compose logs --tail=50
+          EOF
+          
+          echo "✅ Deployment successful!"
+
+      - name: Health check
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST || github.event.inputs.server_host }}
+        run: |
+          echo "🏥 Running health checks..."
+          sleep 10
+          
+          # Check backend
+          if curl -f http://$SERVER_HOST:8000/api/products/; then
+            echo "✅ Backend is healthy"
+          else
+            echo "⚠️ Backend health check failed"
+          fi
+          
+          # Check frontend
+          if curl -f http://$SERVER_HOST/; then
+            echo "✅ Frontend is healthy"
+          else
+            echo "⚠️ Frontend health check failed"
+          fi
+
