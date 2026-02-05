@@ -10,6 +10,7 @@ services:
       - "8000:8000"
     environment:
       - DEBUG=False
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
     volumes:
       - backend_db:/app/core/db.sqlite3
     restart: unless-stopped
