@@ -88,4 +88,4 @@ This runs frontend on http://localhost:8080 and backend on http://localhost:8000
 
 ## License
 
-This project is intended for educational purposes. 
+This project is intended for educational purposes. # Test deployment
