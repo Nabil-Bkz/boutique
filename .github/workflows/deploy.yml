@@ -71,25 +71,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Validate secrets
+        run: |
+          if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ] || [ "${{ secrets.SSH_PRIVATE_KEY }}" == "" ]; then
+            echo "::error::SSH_PRIVATE_KEY secret is not set"
+            echo "Please add it at: https://github.com/${{ github.repository }}/settings/secrets/actions"
+            exit 1
+          fi
+          SERVER_HOST="${{ secrets.SERVER_HOST || github.event.inputs.server_host }}"
+          if [ -z "$SERVER_HOST" ] || [ "$SERVER_HOST" == "" ]; then
+            echo "::error::SERVER_HOST secret is not set and no input provided"
+            echo "Please add it at: https://github.com/${{ github.repository }}/settings/secrets/actions"
+            exit 1
+          fi
+          echo "✅ Secrets validated"
+          echo "SERVER_HOST=$SERVER_HOST"
+
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
         continue-on-error: false
-
-      - name: Validate secrets
-        run: |
-          if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
-            echo "❌ Error: SSH_PRIVATE_KEY secret is not set"
-            echo "Please add it at: https://github.com/${{ github.repository }}/settings/secrets/actions"
-            exit 1
-          fi
-          if [ -z "${{ secrets.SERVER_HOST }}" ] && [ -z "${{ github.event.inputs.server_host }}" ]; then
-            echo "❌ Error: SERVER_HOST secret is not set and no input provided"
-            echo "Please add it at: https://github.com/${{ github.repository }}/settings/secrets/actions"
-            exit 1
-          fi
-          echo "✅ Secrets validated"
 
       - name: Add server to known hosts
         run: |
